@@ -31,7 +31,6 @@
 #include <Interpreters/InternalTextLogsQueue.h>
 #include <Interpreters/OpenTelemetrySpanLog.h>
 #include <Interpreters/Session.h>
-#include <Interpreters/ProcessList.h>
 #include <Server/TCPServer.h>
 #include <Storages/StorageReplicatedMergeTree.h>
 #include <Storages/MergeTree/MergeTreeDataPartUUID.h>
@@ -42,7 +41,7 @@
 #include <DataTypes/DataTypeLowCardinality.h>
 #include <DataTypes/DataTypeEnum.h>
 #include <Compression/CompressionFactory.h>
-#include <base/logger_useful.h>
+#include <Common/logger_useful.h>
 #include <Common/CurrentMetrics.h>
 #include <fmt/format.h>
 
@@ -1702,6 +1701,8 @@ void TCPHandler::sendTableColumns(const ColumnsDescription & columns)
 
 void TCPHandler::sendException(const Exception & e, bool with_stack_trace)
 {
+    state.io.setAllDataSent();
+
     writeVarUInt(Protocol::Server::Exception, *out);
     writeException(e, *out, with_stack_trace);
     out->next();
@@ -1711,11 +1712,7 @@ void TCPHandler::sendException(const Exception & e, bool with_stack_trace)
 void TCPHandler::sendEndOfStream()
 {
     state.sent_all_data = true;
-    /// The following queries does not have process_list_entry:
-    /// - internal
-    /// - SHOW PROCESSLIST
-    if (state.io.process_list_entry)
-        (*state.io.process_list_entry)->setAllDataSent();
+    state.io.setAllDataSent();
 
     writeVarUInt(Protocol::Server::EndOfStream, *out);
     out->next();

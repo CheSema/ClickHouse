@@ -78,7 +78,7 @@
 #include <Common/Config/AbstractConfigurationComparison.h>
 #include <Common/ZooKeeper/ZooKeeper.h>
 #include <Common/ShellCommand.h>
-#include <base/logger_useful.h>
+#include <Common/logger_useful.h>
 #include <base/EnumReflection.h>
 #include <Common/RemoteHostFilter.h>
 #include <Interpreters/AsynchronousInsertQueue.h>
@@ -2560,6 +2560,14 @@ std::shared_ptr<ProcessorsProfileLog> Context::getProcessorsProfileLog() const
     return shared->system_logs->processors_profile_log;
 }
 
+std::shared_ptr<FilesystemCacheLog> Context::getFilesystemCacheLog() const
+{
+    auto lock = getLock();
+    if (!shared->system_logs)
+        return {};
+
+    return shared->system_logs->cache_log;
+}
 
 CompressionCodecPtr Context::chooseCompressionCodec(size_t part_size, double part_size_ratio) const
 {
